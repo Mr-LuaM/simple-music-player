@@ -31,9 +31,11 @@ class MusicController extends BaseController
 
     public function main()
     {
+        $context = 'home';
         $data = [
             'playlists' => $this->playlists->findAll(),
             'music' => $this->music->findAll(),
+            'context' => $context,
         ];
         return view('main', $data);
     }
@@ -131,6 +133,7 @@ class MusicController extends BaseController
 
     public function viewPlaylist($playlistID)
     {
+        $context = 'playlist';
         // Create a query builder instance
         $builder = $this->db->table('playlist_track');
 
@@ -150,9 +153,46 @@ class MusicController extends BaseController
         $data = [
             'music' => $musicInPlaylist,
             'playlists' => $this->playlists->findAll(),
+            'context' => $context,
         ];
 
         // Load the view to display the music in the playlist
+        return view('main', $data);
+    }
+
+    public function search()
+    {
+        $searchTerm = $this->request->getGet('search');
+        $context = $this->request->getGet('context');
+        $builder = $this->db->table('music');
+
+        if ($context === 'home') {
+
+            // Search all songs
+            $builder->like('title', $searchTerm);
+        } elseif ($context === 'playlist') {
+
+            // Search songs in the current playlist
+            $playlistID = $this->request->getGet('playlistID'); // Assuming you pass playlistID as a parameter
+            $builder
+                ->join('playlist_track', 'playlist_track.music_id = music.music_id')
+                ->where('playlist_track.playlist_id', $playlistID)
+                ->like('music.title', $searchTerm);
+        } else {
+            // Handle other contexts as needed
+            // You can add more conditions here if necessary
+        }
+
+        // Get the search results
+        $results = $builder->get()->getResultArray();
+
+        // Pass the search results to the view
+        $data = [
+            'music' => $results,
+            'playlists' => $this->playlists->findAll(),
+            'context' => $context,
+        ];
+
         return view('main', $data);
     }
 
