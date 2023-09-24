@@ -11,10 +11,19 @@
 
 
 
-  <form action="/" method="get">
-    <input type="search" name="search" placeholder="search song">
-    <button type="submit" class="btn btn-primary">search</button>
+  <!-- In your view where the search form is displayed -->
+  <form action="/search" method="get">
+    <input type="search" name="search" placeholder="Search song">
+    <input type="hidden" name="context" value="<?= $context ?>">
+
+    <?php if ($context === 'playlist'): ?>
+      <!-- Include the playlistID parameter when in a playlist context -->
+      <input type="hidden" name="playlistID" value="<?= $playlist['playlist_id'] ?>">
+    <?php endif ?>
+
+    <button type="submit" class="btn btn-primary">Search</button>
   </form>
+
   <h1>Music Player</h1>
   <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
     My Playlist

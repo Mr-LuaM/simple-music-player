@@ -38,26 +38,4 @@ class MusicModel extends Model
     protected $afterFind = [];
     protected $beforeDelete = [];
     protected $afterDelete = [];
-
-    public function getMusicByPlaylist($playlistID)
-    {
-        $builder = $this->db->table('playlist_track');
-        $builder->select('music.*');
-        $builder->join('music', 'music.music_id = playlist_track.music_id');
-        $builder->where('playlist_track.playlist_id', $playlistID);
-
-        return $builder->get()->getResultArray();
-
-    }
-    // public function getMusicByPlaylist($playlistID)
-    // {
-    //     // Assuming you have a 'playlist_music' table to establish the relationship between playlists and music
-    //     $builder = $this->db->table('playlist_track');
-    //     $builder->select('music.*');
-    //     $builder->join('music', 'music.music_id = playlist_track.music_id');
-    //     $builder->where('playlist_track.playlist_id', $playlistID);
-
-    //     return $builder->get()->getResult();
-    // }
-
 }
