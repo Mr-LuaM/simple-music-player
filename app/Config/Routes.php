@@ -14,3 +14,4 @@ $routes->get('/delete_playlist/(:any)', 'MusicController::delete_playlist/$1');
 $routes->post('/addtoplaylist', 'MusicController::addToPlaylist');
 $routes->get('/playlist/(:any)', 'MusicController::viewPlaylist/$1');
 $routes->get('/search', 'MusicController::search');
+$routes->get('/removeFromPlaylist/(:segment)', 'MusicController::removeFromPlaylist/$1');

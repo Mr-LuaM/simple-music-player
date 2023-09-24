@@ -1,36 +1,34 @@
-<div class="modal" id="myModal">
+<div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-
             <!-- Modal Header -->
-            <div class="modal-header">
-                <h4 class="modal-title">Select from playlist</h4>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="exampleModalLabel">Select from playlist</h5>
+                <button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <!-- Modal body -->
+            <!-- Modal Body -->
             <div class="modal-body">
                 <form action="/addtoplaylist" method="post">
-                    <!-- <p id="modalData"></p> -->
                     <input type="hidden" id="musicID" name="musicID" value="">
-
-                    <select name="playlist" class="form-control" id="playlistSelect">
-                        <?php foreach ($playlists as $playlist): ?>
-                            <option value="<?= $playlist['playlist_id'] ?>">
-                                <?= $playlist['name'] ?>
-                            </option>
-                        <?php endforeach ?>
-                    </select>
-
-                    <button type="submit">Submit</button>
+                    <div class="mb-3">
+                        <label for="playlistSelect" class="form-label">Select Playlist</label>
+                        <select name="playlist" class="form-select">
+                            <?php foreach ($playlists as $playlist): ?>
+                                <option value="<?= $playlist['playlist_id'] ?>">
+                                    <?= $playlist['name'] ?>
+                                </option>
+                            <?php endforeach ?>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success">Submit</button>
                 </form>
             </div>
 
-            <!-- Modal footer -->
-            <div class="modal-footer">
-                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+            <!-- Modal Footer -->
+            <div class="modal-footer bg-dark">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
-
         </div>
     </div>
 </div>

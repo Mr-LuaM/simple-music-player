@@ -9,8 +9,8 @@ class MusicController extends BaseController
     private $music;
     private $playlists;
     private $playlist_track;
-
     private $db;
+
     public function index()
     {
         //
@@ -23,11 +23,7 @@ class MusicController extends BaseController
         $this->playlist_track = new \App\Models\PlaylistTrackModel();
         $this->db = \Config\Database::connect();
         helper('form');
-
     }
-
-
-
 
     public function main()
     {
@@ -45,29 +41,48 @@ class MusicController extends BaseController
     {
         $file = $this->request->getFile('song');
         $newFileName = $file->getRandomName();
-        var_dump($file);
+
+
+        $getID3 = new \getID3(); //gumamit ako sir ng library para maextract metadata
+        //https://github.com/JamesHeinrich/getID3.git
 
         $data = [
             'title' => $file->getName(),
-            'file_path' => $newFileName
+            'artist' => '',
+            'file_path' => $newFileName,
+            'duration' => 0,
+            'album' => '',
+            'genre' => ''
         ];
-        var_dump($data);
+
         $rules = [
             'song' => [
                 'uploaded[song]',
                 'mime_in[song,audio/mpeg]',
-                // Allow only MP3 files
                 'max_size[song,10240]',
-                // Maximum file size in kilobytes (adjust as needed)
-                'ext_in[song,mp3]' // Allow only files with the .mp3 extension
+                'ext_in[song,mp3]'
             ]
         ];
 
         if ($this->validate($rules)) {
             if ($file->isValid() && !$file->hasMoved()) {
                 if ($file->move(FCPATH . 'uploads\songs', $newFileName)) {
-                    echo 'File uploaded successfully';
+                    // Get metadata from the uploaded MP3 file
+                    $fileInfo = $getID3->analyze(FCPATH . 'uploads\songs/' . $newFileName);
+
+                    if (isset($fileInfo['tags']['id3v2'])) {
+                        $tags = $fileInfo['tags']['id3v2'];
+
+                        // Extract metadata
+                        $data['artist'] = $tags['artist'][0] ?? '';
+                        $data['duration'] = (int) $fileInfo['playtime_seconds'];
+                        $data['album'] = $tags['album'][0] ?? '';
+                        $data['genre'] = $tags['genre'][0] ?? '';
+                    }
+
+                    // Save the data to the database
                     $this->music->save($data);
+                    echo 'File uploaded successfully';
                 } else {
                     echo $file->getErrorString() . ' ' . $file->getError();
                 }
@@ -79,29 +94,32 @@ class MusicController extends BaseController
         return redirect()->to('/main');
     }
 
+
     public function addToPlaylist()
     {
         $musicID = $this->request->getPost('musicID');
         $playlistID = $this->request->getPost('playlist');
 
-        // Insert a new record into the playlist_music table
+
         $data = [
             'playlist_id' => $playlistID,
             'music_id' => $musicID
         ];
 
-        // Perform the insertion
         $this->playlist_track->insert($data);
 
-        // Optionally, you can redirect the user after the insertion
         return redirect()->to('/main');
     }
 
+    public function removeFromPlaylist($musicID)
+    {
 
+        $builder = $this->db->table('playlist_track');
+        $builder->where('id', $musicID);
+        $builder->delete();
 
-
-
-
+        return redirect()->to('/main');
+    }
 
     public function create_playlist()
     {
@@ -123,40 +141,43 @@ class MusicController extends BaseController
     //     return view('main', $data);
     // }
 
-    public function delete_playlist($student)
+    public function delete_playlist($playlistID)
     {
-        $this->playlists->delete($student);
+        // Find the playlist by its ID
+        $playlist = $this->playlists->find($playlistID);
+
+        if ($playlist) {
+
+            $this->playlist_track->where('playlist_id', $playlistID)->delete();
+
+            // Now, delete the playlist
+            $this->playlists->delete($playlistID);
+        }
+
+
         return redirect()->to('/main');
     }
-
-
 
     public function viewPlaylist($playlistID)
     {
         $context = 'playlist';
-        // Create a query builder instance
+
         $builder = $this->db->table('playlist_track');
 
-        // Select the desired columns from the 'music' table
-        $builder->select('music.*');
+        $builder->select('playlist_track.id, music.*');
 
-        // Join the 'music' table based on the music_id
         $builder->join('music', 'music.music_id = playlist_track.music_id');
 
-        // Apply a where condition to filter by playlist_id
         $builder->where('playlist_track.playlist_id', $playlistID);
 
-        // Run the query and get the result as an array
         $musicInPlaylist = $builder->get()->getResultArray();
 
-        // Pass the data to your view for rendering
         $data = [
             'music' => $musicInPlaylist,
             'playlists' => $this->playlists->findAll(),
             'context' => $context,
         ];
 
-        // Load the view to display the music in the playlist
         return view('main', $data);
     }
 
@@ -173,14 +194,13 @@ class MusicController extends BaseController
         } elseif ($context === 'playlist') {
 
             // Search songs in the current playlist
-            $playlistID = $this->request->getGet('playlistID'); // Assuming you pass playlistID as a parameter
+            $playlistID = $this->request->getGet('playlistID');
             $builder
                 ->join('playlist_track', 'playlist_track.music_id = music.music_id')
                 ->where('playlist_track.playlist_id', $playlistID)
                 ->like('music.title', $searchTerm);
         } else {
-            // Handle other contexts as needed
-            // You can add more conditions here if necessary
+            //nag iisp pa
         }
 
         // Get the search results
